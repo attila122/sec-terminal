@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Terminal</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         
         * {
             margin: 0;
@@ -16,9 +16,10 @@
         body {
             background: #000000;
             color: #ffffff;
-            font-family: 'Fira Code', monospace;
-            font-size: 18px;
-            line-height: 1.4;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
             overflow: hidden;
         }
         
@@ -40,6 +41,7 @@
             font-size: 24px;
             margin-bottom: 5px;
             text-shadow: none;
+            font-weight: 600;
         }
         
         .header p {
@@ -82,7 +84,7 @@
             background: #1a1a1a;
             border: 1px solid #ffffff;
             color: #ffffff;
-            font-family: 'Fira Code', monospace;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
         }
         
@@ -98,11 +100,12 @@
             background: transparent;
             border: 2px solid #ffffff;
             color: #ffffff;
-            font-family: 'Fira Code', monospace;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 10px;
+            font-weight: 500;
         }
         
         .btn:hover {
@@ -129,12 +132,12 @@
         }
         
         .error {
-            color: #ffffff;
+            color: #f87171;
             font-weight: bold;
         }
         
         .success {
-            color: #ffffff;
+            color: #4ade80;
         }
         
         .data-table {
@@ -214,9 +217,33 @@
             background: #1a1a1a;
         }
         
-        .scrollbar::-webkit-scrollbar-thumb {
-            background: #ffffff;
-            border-radius: 4px;
+        /* Responsive design for mobile */
+        @media (max-width: 768px) {
+            .terminal {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                flex: none;
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .input-group input {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -234,17 +261,9 @@
                     <input type="text" id="ticker" placeholder="e.g., AAPL, MSFT, TSLA" autocomplete="off">
                 </div>
                 
-                <div class="input-group">
-                    <label for="statement-type">STATEMENT TYPE:</label>
-                    <select id="statement-type">
-                        <option value="10-K">10-K (Annual Report)</option>
-                        <option value="10-Q">10-Q (Quarterly Report)</option>
-                        <option value="8-K">8-K (Current Report)</option>
-                    </select>
-                </div>
-                
-                <button class="btn" onclick="fetchFinancialData()">EXECUTE QUERY</button>
-                <button class="btn" onclick="clearOutput()">CLEAR TERMINAL</button>
+                <button class="btn" onclick="fetchFinancialData()">SEARCH</button>
+                <button class="btn" onclick="showTopCompanies()">VIEW TOP 100 COMPANIES</button>
+                <button class="btn" onclick="clearOutput()">CLEAR</button>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.3);">
                     <div style="font-size: 12px; opacity: 0.7;">
@@ -258,7 +277,7 @@
                 <div class="output scrollbar" id="output">
                     <div class="blinking-cursor">Terminal initialized...</div>
                     <div style="margin-top: 20px; opacity: 0.7;">
-                        Enter a ticker symbol to begin analysis.
+                        Enter a ticker symbol to begin financial analysis.
                     </div>
                 </div>
             </div>
@@ -294,9 +313,76 @@
             }
         });
         
+        function showTopCompanies() {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            
+            appendToOutput('Top 100 US Companies by Market Cap', 'section-header');
+            appendToOutput('──────────────────────────────────────────────────────────────────────', 'data-label');
+            
+            const companies = [
+                'AAPL - Apple Inc.',
+                'MSFT - Microsoft Corporation',
+                'NVDA - NVIDIA Corporation',
+                'GOOGL - Alphabet Inc. (Class A)',
+                'AMZN - Amazon.com Inc.',
+                'META - Meta Platforms Inc.',
+                'TSLA - Tesla Inc.',
+                'BRK.B - Berkshire Hathaway Inc. (Class B)',
+                'AVGO - Broadcom Inc.',
+                'JPM - JPMorgan Chase & Co.',
+                'LLY - Eli Lilly and Company',
+                'UNH - UnitedHealth Group Inc.',
+                'XOM - Exxon Mobil Corporation',
+                'V - Visa Inc.',
+                'PG - Procter & Gamble Co.',
+                'JNJ - Johnson & Johnson',
+                'MA - Mastercard Inc.',
+                'HD - The Home Depot Inc.',
+                'COST - Costco Wholesale Corporation',
+                'ABBV - AbbVie Inc.',
+                'NFLX - Netflix Inc.',
+                'BAC - Bank of America Corporation',
+                'CRM - Salesforce Inc.',
+                'KO - The Coca-Cola Company',
+                'WMT - Walmart Inc.',
+                'ADBE - Adobe Inc.',
+                'PEP - PepsiCo Inc.',
+                'TMO - Thermo Fisher Scientific Inc.',
+                'CSCO - Cisco Systems Inc.',
+                'ACN - Accenture plc',
+                'LIN - Linde plc',
+                'MRK - Merck & Co. Inc.',
+                'ABT - Abbott Laboratories',
+                'TXN - Texas Instruments Inc.',
+                'DHR - Danaher Corporation',
+                'NKE - NIKE Inc.',
+                'VZ - Verizon Communications Inc.',
+                'INTU - Intuit Inc.',
+                'WFC - Wells Fargo & Company',
+                'ORCL - Oracle Corporation',
+                'PM - Philip Morris International Inc.',
+                'CVX - Chevron Corporation',
+                'COP - ConocoPhillips',
+                'QCOM - QUALCOMM Inc.',
+                'AMD - Advanced Micro Devices Inc.',
+                'IBM - International Business Machines Corp.',
+                'NEE - NextEra Energy Inc.',
+                'RTX - Raytheon Technologies Corporation',
+                'UPS - United Parcel Service Inc.',
+                'LOW - Lowe\'s Companies Inc.'
+            ];
+            
+            companies.forEach((company, index) => {
+                appendToOutput(`${String(index + 1).padStart(3, ' ')}. ${company}`);
+            });
+            
+            appendToOutput('');
+            appendToOutput('Enter any ticker symbol above to get detailed financial analysis.', 'data-label');
+        }
+        
         async function fetchFinancialData() {
             const ticker = document.getElementById('ticker').value.toUpperCase().trim();
-            const statementType = document.getElementById('statement-type').value;
             const output = document.getElementById('output');
             
             if (!ticker) {
@@ -306,30 +392,26 @@
             
             queryCount++;
             document.getElementById('query-count').textContent = queryCount;
-            document.getElementById('last-query').textContent = `${ticker} (${statementType})`;
+            document.getElementById('last-query').textContent = ticker;
             
             // Clear output and show loading
             output.innerHTML = '';
             appendToOutput(`Executing query for ${ticker}...`, 'loading');
-            appendToOutput(`Statement Type: ${statementType}`, 'loading');
-            appendToOutput('Connecting to database...', 'loading');
+            appendToOutput('Connecting to financial database...', 'loading');
             
             // Simulate API delay
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             try {
-                const financialData = await simulateSecApiCall(ticker, statementType);
-                displayFinancialData(ticker, statementType, financialData);
+                const financialData = getFinancialData(ticker);
+                displayFinancialData(ticker, financialData);
             } catch (error) {
                 appendToOutput(`ERROR: ${error.message}`, 'error');
             }
         }
         
-        async function simulateSecApiCall(ticker, statementType) {
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Sample financial data with more realistic numbers
+        function getFinancialData(ticker) {
+            // Sample financial data
             const sampleData = {
                 'AAPL': {
                     companyName: 'Apple Inc.',
@@ -376,7 +458,7 @@
             return sampleData[ticker];
         }
         
-        function displayFinancialData(ticker, statementType, data) {
+        function displayFinancialData(ticker, data) {
             const output = document.getElementById('output');
             output.innerHTML = '';
             
@@ -455,7 +537,6 @@
         }
         
         function formatNumber(num) {
-            // Format with full commas, no abbreviations
             return num.toLocaleString('en-US');
         }
         
