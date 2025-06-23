@@ -224,7 +224,7 @@
     <div class="terminal">
         <div class="header">
             <h1>Finance Terminal</h1>
-            <p>Real-time financial data extraction and analysis pulling from SEC database, made by Attila Ainiwaer: github.com/attila122</p>
+            <p>Financial data extraction and analysis - github.com/attila122</p>
         </div>
         
         <div class="main-content">
@@ -248,8 +248,7 @@
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.3);">
                     <div style="font-size: 12px; opacity: 0.7;">
-                        <div>SYSTEM STATUS: <span style="color: #ffffff;">ONLINE</span></div>
-                        <div>SEC API: <span style="color: #ffffff;">CONNECTED</span></div>
+                        <div>STATUS: <span style="color: #ffffff;">ONLINE</span></div>
                         <div>QUERIES: <span id="query-count">0</span></div>
                     </div>
                 </div>
@@ -257,17 +256,9 @@
             
             <div class="output-section">
                 <div class="output scrollbar" id="output">
-                    <div class="blinking-cursor">SEC Financial Terminal initialized...</div>
+                    <div class="blinking-cursor">Terminal initialized...</div>
                     <div style="margin-top: 20px; opacity: 0.7;">
-                        Enter a ticker symbol and select statement type to begin analysis.
-                    </div>
-                    <div style="margin-top: 30px; color: #cccccc;">
-                        <div>SUPPORTED COMMANDS:</div>
-                        <div style="margin-left: 20px; margin-top: 10px; font-size: 12px;">
-                            <div>• 10-K: Annual financial statements</div>
-                            <div>• 10-Q: Quarterly financial statements</div>
-                            <div>• 8-K: Material events and changes</div>
-                        </div>
+                        Enter a ticker symbol to begin analysis.
                     </div>
                 </div>
             </div>
@@ -275,7 +266,7 @@
         
         <div class="status-bar">
             <div class="status-left">
-                SEC Terminal | User: ANALYST | Session: <span id="session-time">00:00:00</span>
+                Terminal | Session: <span id="session-time">00:00:00</span>
             </div>
             <div class="status-right">
                 Last Query: <span id="last-query">NONE</span>
@@ -321,14 +312,12 @@
             output.innerHTML = '';
             appendToOutput(`Executing query for ${ticker}...`, 'loading');
             appendToOutput(`Statement Type: ${statementType}`, 'loading');
-            appendToOutput('Connecting to SEC EDGAR database...', 'loading');
+            appendToOutput('Connecting to database...', 'loading');
             
             // Simulate API delay
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             try {
-                // Since we can't actually hit the SEC API directly from browser due to CORS,
-                // we'll simulate the response with realistic data
                 const financialData = await simulateSecApiCall(ticker, statementType);
                 displayFinancialData(ticker, statementType, financialData);
             } catch (error) {
@@ -340,7 +329,7 @@
             // Simulate network delay
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Sample financial data (in a real app, this would come from SEC API)
+            // Sample financial data with more realistic numbers
             const sampleData = {
                 'AAPL': {
                     companyName: 'Apple Inc.',
@@ -392,7 +381,7 @@
             output.innerHTML = '';
             
             appendToOutput(`Connection established`, 'success');
-            appendToOutput(`Data retrieved successfully for ${ticker}`, 'success');
+            appendToOutput(`Data retrieved for ${ticker}`, 'success');
             appendToOutput('', '');
             
             // Company header
@@ -462,20 +451,12 @@
             </div>`);
             
             appendToOutput('', '');
-            appendToOutput(`Query completed successfully.`, 'success');
+            appendToOutput(`Query completed.`, 'success');
         }
         
         function formatNumber(num) {
-            if (num >= 1e12) {
-                return (num / 1e12).toFixed(2) + 'T';
-            } else if (num >= 1e9) {
-                return (num / 1e9).toFixed(2) + 'B';
-            } else if (num >= 1e6) {
-                return (num / 1e6).toFixed(2) + 'M';
-            } else if (num >= 1e3) {
-                return (num / 1e3).toFixed(2) + 'K';
-            }
-            return num.toLocaleString();
+            // Format with full commas, no abbreviations
+            return num.toLocaleString('en-US');
         }
         
         function appendToOutput(content, className = '') {
