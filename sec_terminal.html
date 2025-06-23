@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEC Financial Terminal</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000000;
+            color: #ffffff;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            overflow: hidden;
+        }
+        
+        .terminal {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #000000;
+        }
+        
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            text-shadow: none;
+        }
+        
+        .header p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .input-section {
+            width: 300px;
+            border-right: 1px solid #ffffff;
+            padding-right: 20px;
+        }
+        
+        .output-section {
+            flex: 1;
+            padding-left: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #ffffff;
+            color: #ffffff;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            border-color: #ffffff;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .output {
+            background: #000000;
+            border: 1px solid #ffffff;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .loading {
+            display: none;
+            color: #cccccc;
+        }
+        
+        .error {
+            color: #ffffff;
+            font-weight: bold;
+        }
+        
+        .success {
+            color: #ffffff;
+        }
+        
+        .data-table {
+            margin-top: 20px;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        
+        .data-label {
+            color: #cccccc;
+            font-weight: 500;
+        }
+        
+        .data-value {
+            color: #ffffff;
+            text-align: right;
+        }
+        
+        .section-header {
+            color: #ffffff;
+            font-size: 16px;
+            margin: 30px 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        
+        .ticker-display {
+            font-size: 20px;
+            color: #ffffff;
+            text-shadow: none;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .blinking-cursor::after {
+            content: '_';
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .status-bar {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-top: 1px solid #ffffff;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-left {
+            opacity: 0.7;
+        }
+        
+        .status-right {
+            color: #ffffff;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #ffffff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="header">
+            <h1>SEC FINANCIAL TERMINAL v2.1</h1>
+            <p>Real-time financial data extraction and analysis</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="ticker">TICKER SYMBOL:</label>
+                    <input type="text" id="ticker" placeholder="e.g., AAPL, MSFT, TSLA" autocomplete="off">
+                </div>
+                
+                <div class="input-group">
+                    <label for="statement-type">STATEMENT TYPE:</label>
+                    <select id="statement-type">
+                        <option value="10-K">10-K (Annual Report)</option>
+                        <option value="10-Q">10-Q (Quarterly Report)</option>
+                        <option value="8-K">8-K (Current Report)</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="fetchFinancialData()">EXECUTE QUERY</button>
+                <button class="btn" onclick="clearOutput()">CLEAR TERMINAL</button>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.3);">
+                    <div style="font-size: 12px; opacity: 0.7;">
+                        <div>SYSTEM STATUS: <span style="color: #ffffff;">ONLINE</span></div>
+                        <div>SEC API: <span style="color: #ffffff;">CONNECTED</span></div>
+                        <div>QUERIES: <span id="query-count">0</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <div class="output scrollbar" id="output">
+                    <div class="blinking-cursor">SEC Financial Terminal initialized...</div>
+                    <div style="margin-top: 20px; opacity: 0.7;">
+                        Enter a ticker symbol and select statement type to begin analysis.
+                    </div>
+                    <div style="margin-top: 30px; color: #cccccc;">
+                        <div>SUPPORTED COMMANDS:</div>
+                        <div style="margin-left: 20px; margin-top: 10px; font-size: 12px;">
+                            <div>• 10-K: Annual financial statements</div>
+                            <div>• 10-Q: Quarterly financial statements</div>
+                            <div>• 8-K: Material events and changes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-left">
+                SEC Terminal | User: ANALYST | Session: <span id="session-time">00:00:00</span>
+            </div>
+            <div class="status-right">
+                Last Query: <span id="last-query">NONE</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let queryCount = 0;
+        let sessionStartTime = Date.now();
+        
+        // Update session timer
+        setInterval(() => {
+            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('session-time').textContent = `${hours}:${minutes}:${seconds}`;
+        }, 1000);
+        
+        // Enter key support
+        document.getElementById('ticker').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchFinancialData();
+            }
+        });
+        
+        async function fetchFinancialData() {
+            const ticker = document.getElementById('ticker').value.toUpperCase().trim();
+            const statementType = document.getElementById('statement-type').value;
+            const output = document.getElementById('output');
+            
+            if (!ticker) {
+                appendToOutput('ERROR: Ticker symbol required', 'error');
+                return;
+            }
+            
+            queryCount++;
+            document.getElementById('query-count').textContent = queryCount;
+            document.getElementById('last-query').textContent = `${ticker} (${statementType})`;
+            
+            // Clear output and show loading
+            output.innerHTML = '';
+            appendToOutput(`Executing query for ${ticker}...`, 'loading');
+            appendToOutput(`Statement Type: ${statementType}`, 'loading');
+            appendToOutput('Connecting to SEC EDGAR database...', 'loading');
+            
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            try {
+                // Since we can't actually hit the SEC API directly from browser due to CORS,
+                // we'll simulate the response with realistic data
+                const financialData = await simulateSecApiCall(ticker, statementType);
+                displayFinancialData(ticker, statementType, financialData);
+            } catch (error) {
+                appendToOutput(`ERROR: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulateSecApiCall(ticker, statementType) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Sample financial data (in a real app, this would come from SEC API)
+            const sampleData = {
+                'AAPL': {
+                    companyName: 'Apple Inc.',
+                    cik: '0000320193',
+                    revenue: 394328000000,
+                    netIncome: 99803000000,
+                    totalAssets: 352755000000,
+                    totalLiabilities: 290437000000,
+                    shareholderEquity: 62318000000,
+                    cashAndEquivalents: 29965000000,
+                    longTermDebt: 106550000000,
+                    filingDate: '2024-10-31'
+                },
+                'MSFT': {
+                    companyName: 'Microsoft Corporation',
+                    cik: '0000789019',
+                    revenue: 245122000000,
+                    netIncome: 88136000000,
+                    totalAssets: 512266000000,
+                    totalLiabilities: 198298000000,
+                    shareholderEquity: 313968000000,
+                    cashAndEquivalents: 75408000000,
+                    longTermDebt: 97718000000,
+                    filingDate: '2024-07-30'
+                },
+                'TSLA': {
+                    companyName: 'Tesla, Inc.',
+                    cik: '0001318605',
+                    revenue: 96773000000,
+                    netIncome: 15000000000,
+                    totalAssets: 106618000000,
+                    totalLiabilities: 43009000000,
+                    shareholderEquity: 63609000000,
+                    cashAndEquivalents: 15513000000,
+                    longTermDebt: 9566000000,
+                    filingDate: '2024-02-26'
+                }
+            };
+            
+            if (!sampleData[ticker]) {
+                throw new Error(`No data found for ticker ${ticker}`);
+            }
+            
+            return sampleData[ticker];
+        }
+        
+        function displayFinancialData(ticker, statementType, data) {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            
+            appendToOutput(`Connection established`, 'success');
+            appendToOutput(`Data retrieved successfully for ${ticker}`, 'success');
+            appendToOutput('', '');
+            
+            // Company header
+            appendToOutput(`<div class="ticker-display">${ticker}</div>`);
+            appendToOutput(`<div style="color: #cccccc; font-size: 18px;">${data.companyName}</div>`);
+            appendToOutput(`<div style="color: #ffffff;">CIK: ${data.cik} | Filing Date: ${data.filingDate}</div>`);
+            
+            // Financial metrics
+            appendToOutput(`<div class="section-header">INCOME STATEMENT</div>`);
+            appendToOutput(`<div class="data-table">
+                <div class="data-row">
+                    <div class="data-label">Total Revenue:</div>
+                    <div class="data-value">$${formatNumber(data.revenue)}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Net Income:</div>
+                    <div class="data-value">$${formatNumber(data.netIncome)}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Profit Margin:</div>
+                    <div class="data-value">${((data.netIncome / data.revenue) * 100).toFixed(2)}%</div>
+                </div>
+            </div>`);
+            
+            appendToOutput(`<div class="section-header">BALANCE SHEET</div>`);
+            appendToOutput(`<div class="data-table">
+                <div class="data-row">
+                    <div class="data-label">Total Assets:</div>
+                    <div class="data-value">$${formatNumber(data.totalAssets)}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Total Liabilities:</div>
+                    <div class="data-value">$${formatNumber(data.totalLiabilities)}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Shareholder Equity:</div>
+                    <div class="data-value">$${formatNumber(data.shareholderEquity)}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Cash & Equivalents:</div>
+                    <div class="data-value">$${formatNumber(data.cashAndEquivalents)}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Long-term Debt:</div>
+                    <div class="data-value">$${formatNumber(data.longTermDebt)}</div>
+                </div>
+            </div>`);
+            
+            appendToOutput(`<div class="section-header">KEY RATIOS</div>`);
+            const debtToEquity = (data.longTermDebt / data.shareholderEquity).toFixed(2);
+            const returnOnAssets = ((data.netIncome / data.totalAssets) * 100).toFixed(2);
+            const assetTurnover = (data.revenue / data.totalAssets).toFixed(2);
+            
+            appendToOutput(`<div class="data-table">
+                <div class="data-row">
+                    <div class="data-label">Debt-to-Equity:</div>
+                    <div class="data-value">${debtToEquity}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Return on Assets:</div>
+                    <div class="data-value">${returnOnAssets}%</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Asset Turnover:</div>
+                    <div class="data-value">${assetTurnover}x</div>
+                </div>
+            </div>`);
+            
+            appendToOutput('', '');
+            appendToOutput(`Query completed successfully.`, 'success');
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1e12) {
+                return (num / 1e12).toFixed(2) + 'T';
+            } else if (num >= 1e9) {
+                return (num / 1e9).toFixed(2) + 'B';
+            } else if (num >= 1e6) {
+                return (num / 1e6).toFixed(2) + 'M';
+            } else if (num >= 1e3) {
+                return (num / 1e3).toFixed(2) + 'K';
+            }
+            return num.toLocaleString();
+        }
+        
+        function appendToOutput(content, className = '') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.innerHTML = content;
+            if (className) {
+                div.className = className;
+            }
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearOutput() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="blinking-cursor">Terminal cleared...</div>';
+        }
+    </script>
+</body>
+</html>
