@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Terminal</title>
+    <title>Finance Terminal - SEC EDGAR</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         
@@ -133,7 +133,6 @@
         }
         
         .loading {
-            display: none;
             color: #cccccc;
         }
         
@@ -144,6 +143,10 @@
         
         .success {
             color: #4ade80;
+        }
+        
+        .warning {
+            color: #fbbf24;
         }
         
         .data-table {
@@ -317,8 +320,8 @@
 <body>
     <div class="terminal">
         <div class="header">
-            <h1>Finance Terminal</h1>
-            <p>Financial data extraction and analysis - github.com/attila122</p>
+            <h1>Finance Terminal - SEC EDGAR</h1>
+            <p>Real-time financial data from SEC EDGAR database via CORS proxy</p>
         </div>
         
         <div class="main-content">
@@ -328,23 +331,28 @@
                     <input type="text" id="ticker" placeholder="e.g., AAPL, MSFT, TSLA" autocomplete="off">
                 </div>
                 
-                <button class="btn" onclick="fetchFinancialData()">SEARCH</button>
-                <button class="btn" onclick="showTopCompanies()">VIEW TOP 100 COMPANIES</button>
+                <button class="btn" onclick="fetchFinancialData()">SEARCH SEC EDGAR</button>
+                <button class="btn" onclick="searchCompany()">SEARCH BY COMPANY NAME</button>
                 <button class="btn" onclick="clearOutput()">CLEAR</button>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.3);">
                     <div style="font-size: 12px; opacity: 0.7;">
-                        <div>STATUS: <span style="color: #ffffff;">ONLINE</span></div>
+                        <div>SEC API: <span id="api-status" style="color: #ffffff;">READY</span></div>
                         <div>QUERIES: <span id="query-count">0</span></div>
+                        <div>PROXY: <span style="color: #cccccc;">CORS-Anywhere</span></div>
                     </div>
                 </div>
             </div>
             
             <div class="output-section">
                 <div class="output" id="output">
-                    <div class="blinking-cursor">Terminal initialized...</div>
+                    <div class="blinking-cursor">SEC EDGAR Terminal initialized...</div>
                     <div style="margin-top: 20px; opacity: 0.7;">
-                        Enter a ticker symbol to begin financial analysis.
+                        Enter a ticker symbol to fetch real SEC data.
+                    </div>
+                    <div style="margin-top: 15px; opacity: 0.5; font-size: 14px;">
+                        Using CORS proxy to access SEC EDGAR database.
+                        Data retrieved directly from official SEC filings.
                     </div>
                 </div>
             </div>
@@ -352,7 +360,7 @@
         
         <div class="status-bar">
             <div class="status-left">
-                Terminal | Session: <span id="session-time">00:00:00</span>
+                SEC EDGAR Terminal | Session: <span id="session-time">00:00:00</span>
             </div>
             <div class="status-right">
                 Last Query: <span id="last-query">NONE</span>
@@ -363,6 +371,7 @@
     <script>
         let queryCount = 0;
         let sessionStartTime = Date.now();
+        const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
         
         // Update session timer
         setInterval(() => {
@@ -380,284 +389,356 @@
             }
         });
         
-        function showTopCompanies() {
-            const output = document.getElementById('output');
-            output.innerHTML = '';
-            
-            appendToOutput('Top 100 US Companies by Market Cap', 'section-header');
-            appendToOutput('──────────────────────────────────────────────────────────────────────', 'data-label');
-            
-            const companies = [
-                'AAPL - Apple Inc.',
-                'MSFT - Microsoft Corporation',
-                'NVDA - NVIDIA Corporation',
-                'GOOGL - Alphabet Inc. (Class A)',
-                'AMZN - Amazon.com Inc.',
-                'META - Meta Platforms Inc.',
-                'TSLA - Tesla Inc.',
-                'BRK.B - Berkshire Hathaway Inc. (Class B)',
-                'AVGO - Broadcom Inc.',
-                'JPM - JPMorgan Chase & Co.',
-                'LLY - Eli Lilly and Company',
-                'UNH - UnitedHealth Group Inc.',
-                'XOM - Exxon Mobil Corporation',
-                'V - Visa Inc.',
-                'PG - Procter & Gamble Co.',
-                'JNJ - Johnson & Johnson',
-                'MA - Mastercard Inc.',
-                'HD - The Home Depot Inc.',
-                'COST - Costco Wholesale Corporation',
-                'ABBV - AbbVie Inc.',
-                'NFLX - Netflix Inc.',
-                'BAC - Bank of America Corporation',
-                'CRM - Salesforce Inc.',
-                'KO - The Coca-Cola Company',
-                'WMT - Walmart Inc.',
-                'ADBE - Adobe Inc.',
-                'PEP - PepsiCo Inc.',
-                'TMO - Thermo Fisher Scientific Inc.',
-                'CSCO - Cisco Systems Inc.',
-                'ACN - Accenture plc',
-                'LIN - Linde plc',
-                'MRK - Merck & Co. Inc.',
-                'ABT - Abbott Laboratories',
-                'TXN - Texas Instruments Inc.',
-                'DHR - Danaher Corporation',
-                'NKE - NIKE Inc.',
-                'VZ - Verizon Communications Inc.',
-                'INTU - Intuit Inc.',
-                'WFC - Wells Fargo & Company',
-                'ORCL - Oracle Corporation',
-                'PM - Philip Morris International Inc.',
-                'CVX - Chevron Corporation',
-                'COP - ConocoPhillips',
-                'QCOM - QUALCOMM Inc.',
-                'AMD - Advanced Micro Devices Inc.',
-                'IBM - International Business Machines Corp.',
-                'NEE - NextEra Energy Inc.',
-                'RTX - Raytheon Technologies Corporation',
-                'UPS - United Parcel Service Inc.',
-                'LOW - Lowe\'s Companies Inc.'
-            ];
-            
-            companies.forEach((company, index) => {
-                appendToOutput(`${String(index + 1).padStart(3, ' ')}. ${company}`);
-            });
-            
-            appendToOutput('');
-            appendToOutput('Enter any ticker symbol above to get detailed financial analysis.', 'data-label');
-        }
-        
         async function fetchFinancialData() {
-            const ticker = document.getElementById('ticker').value.toUpperCase().trim();
-            const output = document.getElementById('output');
-            
-            if (!ticker) {
-                appendToOutput('ERROR: Ticker symbol required', 'error');
-                return;
-            }
-            
-            queryCount++;
-            document.getElementById('query-count').textContent = queryCount;
-            document.getElementById('last-query').textContent = ticker;
-            
-            // Clear output and show loading
-            output.innerHTML = '';
-            appendToOutput(`Executing query for ${ticker}...`, 'loading');
-            appendToOutput('Connecting to financial database...', 'loading');
-            
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
             try {
-                const financialData = getFinancialData(ticker);
-                displayFinancialData(ticker, financialData);
+                const ticker = document.getElementById('ticker').value.toUpperCase().trim();
+                
+                if (!ticker) {
+                    appendToOutput('ERROR: Ticker symbol required', 'error');
+                    return;
+                }
+                
+                queryCount++;
+                document.getElementById('query-count').textContent = queryCount;
+                document.getElementById('last-query').textContent = ticker;
+                document.getElementById('api-status').textContent = 'FETCHING';
+                document.getElementById('api-status').style.color = '#fbbf24';
+                
+                const output = document.getElementById('output');
+                output.innerHTML = '';
+                appendToOutput(`Executing SEC EDGAR query for ${ticker}...`, 'loading');
+                appendToOutput('Connecting to SEC database via CORS proxy...', 'loading');
+                
+                // Step 1: Get CIK from ticker
+                appendToOutput('Resolving CIK from ticker symbol...', 'loading');
+                
+                const tickerUrl = `${CORS_PROXY}https://www.sec.gov/files/company_tickers.json`;
+                
+                const tickerResponse = await fetch(tickerUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!tickerResponse.ok) {
+                    throw new Error(`SEC API error: ${tickerResponse.status}. Try enabling CORS proxy at cors-anywhere.herokuapp.com/corsdemo`);
+                }
+                
+                const tickerData = await tickerResponse.json();
+                let cik = null;
+                let companyName = null;
+                
+                // Find the CIK for the given ticker
+                for (const [key, company] of Object.entries(tickerData)) {
+                    if (company.ticker === ticker) {
+                        cik = company.cik_str.toString().padStart(10, '0');
+                        companyName = company.title;
+                        break;
+                    }
+                }
+                
+                if (!cik) {
+                    throw new Error(`Ticker ${ticker} not found in SEC database`);
+                }
+                
+                appendToOutput(`Found CIK: ${cik}`, 'success');
+                appendToOutput(`Company: ${companyName}`, 'success');
+                
+                // Step 2: Get company facts
+                appendToOutput('Fetching comprehensive financial data...', 'loading');
+                
+                const factsUrl = `${CORS_PROXY}https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`;
+                
+                const factsResponse = await fetch(factsUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!factsResponse.ok) {
+                    throw new Error(`No financial data available for ${ticker}`);
+                }
+                
+                const factsData = await factsResponse.json();
+                displaySecData(ticker, companyName, cik, factsData);
+                
+                document.getElementById('api-status').textContent = 'SUCCESS';
+                document.getElementById('api-status').style.color = '#4ade80';
+                
             } catch (error) {
                 appendToOutput(`ERROR: ${error.message}`, 'error');
-            }
-        }
-        
-        function getFinancialData(ticker) {
-            // Sample financial data
-            const sampleData = {
-                'AAPL': {
-                    companyName: 'Apple Inc.',
-                    cik: '0000320193',
-                    revenue: 394328000000,
-                    netIncome: 99803000000,
-                    totalAssets: 352755000000,
-                    totalLiabilities: 290437000000,
-                    shareholderEquity: 62318000000,
-                    cashAndEquivalents: 29965000000,
-                    longTermDebt: 106550000000,
-                    filingDate: '2024-10-31'
-                },
-                'MSFT': {
-                    companyName: 'Microsoft Corporation',
-                    cik: '0000789019',
-                    revenue: 245122000000,
-                    netIncome: 88136000000,
-                    totalAssets: 512266000000,
-                    totalLiabilities: 198298000000,
-                    shareholderEquity: 313968000000,
-                    cashAndEquivalents: 75408000000,
-                    longTermDebt: 97718000000,
-                    filingDate: '2024-07-30'
-                },
-                'TSLA': {
-                    companyName: 'Tesla, Inc.',
-                    cik: '0001318605',
-                    revenue: 96773000000,
-                    netIncome: 15000000000,
-                    totalAssets: 106618000000,
-                    totalLiabilities: 43009000000,
-                    shareholderEquity: 63609000000,
-                    cashAndEquivalents: 15513000000,
-                    longTermDebt: 9566000000,
-                    filingDate: '2024-02-26'
+                if (error.message.includes('CORS')) {
+                    appendToOutput('', '');
+                    appendToOutput('CORS PROXY SETUP REQUIRED:', 'warning');
+                    appendToOutput('1. Visit: https://cors-anywhere.herokuapp.com/corsdemo', 'data-label');
+                    appendToOutput('2. Click "Request temporary access to the demo server"', 'data-label');
+                    appendToOutput('3. Return here and try your search again', 'data-label');
                 }
-            };
-            
-            if (!sampleData[ticker]) {
-                throw new Error(`No data found for ticker ${ticker}`);
+                document.getElementById('api-status').textContent = 'ERROR';
+                document.getElementById('api-status').style.color = '#f87171';
             }
-            
-            return sampleData[ticker];
         }
         
-        function displayFinancialData(ticker, data) {
+        async function searchCompany() {
+            try {
+                const companyName = document.getElementById('ticker').value.trim();
+                
+                if (!companyName) {
+                    appendToOutput('ERROR: Company name required for search', 'error');
+                    return;
+                }
+                
+                const output = document.getElementById('output');
+                output.innerHTML = '';
+                appendToOutput(`Searching SEC database for "${companyName}"...`, 'loading');
+                
+                const tickerUrl = `${CORS_PROXY}https://www.sec.gov/files/company_tickers.json`;
+                
+                const response = await fetch(tickerUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`SEC API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const matches = [];
+                
+                // Search through company tickers
+                for (const [key, company] of Object.entries(data)) {
+                    if (company.title && company.title.toLowerCase().includes(companyName.toLowerCase())) {
+                        matches.push({
+                            ticker: company.ticker,
+                            title: company.title,
+                            cik: company.cik_str.toString().padStart(10, '0')
+                        });
+                    }
+                }
+                
+                if (matches.length === 0) {
+                    appendToOutput(`No companies found matching "${companyName}"`, 'warning');
+                    return;
+                }
+                
+                appendToOutput('Search Results:', 'section-header');
+                appendToOutput('──────────────────────────────────────────────────────────────────────', 'data-label');
+                
+                matches.slice(0, 10).forEach((match, index) => {
+                    appendToOutput(`${index + 1}. ${match.ticker} - ${match.title}`);
+                    appendToOutput(`   CIK: ${match.cik}`, 'data-label');
+                });
+                
+                if (matches.length > 10) {
+                    appendToOutput(`... and ${matches.length - 10} more results`, 'data-label');
+                }
+                
+                appendToOutput('', '');
+                appendToOutput('Enter a ticker symbol above to get detailed financial data.', 'data-label');
+                
+            } catch (error) {
+                appendToOutput(`ERROR: ${error.message}`, 'error');
+                if (error.message.includes('CORS')) {
+                    appendToOutput('Please enable CORS proxy access first.', 'warning');
+                }
+            }
+        }
+        
+        function displaySecData(ticker, companyName, cik, factsData) {
             const output = document.getElementById('output');
             output.innerHTML = '';
             
-            appendToOutput(`Connection established`, 'success');
-            appendToOutput(`Data retrieved for ${ticker}`, 'success');
+            appendToOutput(`SEC EDGAR data retrieved successfully`, 'success');
             appendToOutput('', '');
             
             // Company header
             appendToOutput(`<div class="ticker-display">${ticker}</div>`);
-            appendToOutput(`<div style="color: #cccccc; font-size: 18px;">${data.companyName}</div>`);
-            appendToOutput(`<div style="color: #ffffff;">CIK: ${data.cik} | Filing Date: ${data.filingDate}</div>`);
+            appendToOutput(`<div style="color: #cccccc; font-size: 18px;">${companyName}</div>`);
+            appendToOutput(`<div style="color: #ffffff;">CIK: ${cik}</div>`);
             
-            // Financial metrics
-            appendToOutput(`<div class="section-header">INCOME STATEMENT</div>`);
-            appendToOutput(`<div class="data-table">
-                <div class="data-row">
-                    <div class="data-label">Total Revenue:</div>
-                    <div class="data-value">$${formatNumber(data.revenue)}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Net Income:</div>
-                    <div class="data-value">$${formatNumber(data.netIncome)}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Profit Margin:</div>
-                    <div class="data-value">${((data.netIncome / data.revenue) * 100).toFixed(2)}%</div>
-                </div>
-            </div>`);
+            const facts = factsData.facts;
+            const financialData = {};
             
-            appendToOutput(`<div class="section-header">BALANCE SHEET</div>`);
-            appendToOutput(`<div class="data-table">
-                <div class="data-row">
-                    <div class="data-label">Total Assets:</div>
-                    <div class="data-value">$${formatNumber(data.totalAssets)}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Total Liabilities:</div>
-                    <div class="data-value">$${formatNumber(data.totalLiabilities)}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Shareholder Equity:</div>
-                    <div class="data-value">$${formatNumber(data.shareholderEquity)}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Cash & Equivalents:</div>
-                    <div class="data-value">$${formatNumber(data.cashAndEquivalents)}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Long-term Debt:</div>
-                    <div class="data-value">$${formatNumber(data.longTermDebt)}</div>
-                </div>
-            </div>`);
+            // Extract key financial metrics from US-GAAP
+            if (facts['us-gaap']) {
+                const gaap = facts['us-gaap'];
+                
+                // Revenue
+                const revenueKeys = ['Revenues', 'RevenueFromContractWithCustomerExcludingAssessedTax', 'SalesRevenueNet'];
+                for (const key of revenueKeys) {
+                    if (gaap[key]) {
+                        financialData.revenue = extractLatestValue(gaap[key]);
+                        break;
+                    }
+                }
+                
+                // Net Income
+                const incomeKeys = ['NetIncomeLoss', 'ProfitLoss'];
+                for (const key of incomeKeys) {
+                    if (gaap[key]) {
+                        financialData.netIncome = extractLatestValue(gaap[key]);
+                        break;
+                    }
+                }
+                
+                // Assets
+                if (gaap.Assets) {
+                    financialData.totalAssets = extractLatestValue(gaap.Assets);
+                }
+                
+                // Liabilities
+                if (gaap.Liabilities) {
+                    financialData.totalLiabilities = extractLatestValue(gaap.Liabilities);
+                }
+                
+                // Equity
+                if (gaap.StockholdersEquity) {
+                    financialData.shareholderEquity = extractLatestValue(gaap.StockholdersEquity);
+                }
+                
+                // Cash
+                if (gaap.CashAndCashEquivalentsAtCarryingValue) {
+                    financialData.cashAndEquivalents = extractLatestValue(gaap.CashAndCashEquivalentsAtCarryingValue);
+                }
+                
+                // Long-term debt
+                const debtKeys = ['LongTermDebtNoncurrent', 'LongTermDebt'];
+                for (const key of debtKeys) {
+                    if (gaap[key]) {
+                        financialData.longTermDebt = extractLatestValue(gaap[key]);
+                        break;
+                    }
+                }
+            }
             
-            appendToOutput(`<div class="section-header">KEY RATIOS</div>`);
-            const debtToEquity = (data.longTermDebt / data.shareholderEquity).toFixed(2);
-            const returnOnAssets = ((data.netIncome / data.totalAssets) * 100).toFixed(2);
-            const assetTurnover = (data.revenue / data.totalAssets).toFixed(2);
+            // Display Income Statement
+            if (financialData.revenue || financialData.netIncome) {
+                appendToOutput('<div class="section-header">INCOME STATEMENT</div>');
+                
+                if (financialData.revenue) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Total Revenue:</div>
+                        <div class="data-value">$${formatNumber(financialData.revenue.value)}</div>
+                    </div>`);
+                    appendToOutput(`<div style="font-size: 12px; color: #666; margin-left: 20px;">As of: ${financialData.revenue.date}</div>`);
+                }
+                
+                if (financialData.netIncome) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Net Income:</div>
+                        <div class="data-value">$${formatNumber(financialData.netIncome.value)}</div>
+                    </div>`);
+                    appendToOutput(`<div style="font-size: 12px; color: #666; margin-left: 20px;">As of: ${financialData.netIncome.date}</div>`);
+                }
+                
+                if (financialData.revenue && financialData.netIncome) {
+                    const profitMargin = (financialData.netIncome.value / financialData.revenue.value * 100).toFixed(2);
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Profit Margin:</div>
+                        <div class="data-value">${profitMargin}%</div>
+                    </div>`);
+                }
+            }
             
-            appendToOutput(`<div class="data-table">
-                <div class="data-row">
+            // Display Balance Sheet
+            if (financialData.totalAssets || financialData.totalLiabilities || financialData.shareholderEquity) {
+                appendToOutput('<div class="section-header">BALANCE SHEET</div>');
+                
+                if (financialData.totalAssets) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Total Assets:</div>
+                        <div class="data-value">$${formatNumber(financialData.totalAssets.value)}</div>
+                    </div>`);
+                }
+                
+                if (financialData.totalLiabilities) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Total Liabilities:</div>
+                        <div class="data-value">$${formatNumber(financialData.totalLiabilities.value)}</div>
+                    </div>`);
+                }
+                
+                if (financialData.shareholderEquity) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Shareholder Equity:</div>
+                        <div class="data-value">$${formatNumber(financialData.shareholderEquity.value)}</div>
+                    </div>`);
+                }
+                
+                if (financialData.cashAndEquivalents) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Cash & Equivalents:</div>
+                        <div class="data-value">$${formatNumber(financialData.cashAndEquivalents.value)}</div>
+                    </div>`);
+                }
+                
+                if (financialData.longTermDebt) {
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Long-term Debt:</div>
+                        <div class="data-value">$${formatNumber(financialData.longTermDebt.value)}</div>
+                    </div>`);
+                }
+            }
+            
+            // Display Key Ratios
+            if (financialData.longTermDebt && financialData.shareholderEquity) {
+                appendToOutput('<div class="section-header">KEY RATIOS</div>');
+                
+                const debtToEquity = (financialData.longTermDebt.value / financialData.shareholderEquity.value).toFixed(2);
+                appendToOutput(`<div class="data-row">
                     <div class="data-label">Debt-to-Equity:</div>
                     <div class="data-value">${debtToEquity}</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Return on Assets:</div>
-                    <div class="data-value">${returnOnAssets}%</div>
-                </div>
-                <div class="data-row">
-                    <div class="data-label">Asset Turnover:</div>
-                    <div class="data-value">${assetTurnover}x</div>
-                </div>
+                </div>`);
+                
+                if (financialData.netIncome && financialData.totalAssets) {
+                    const returnOnAssets = (financialData.netIncome.value / financialData.totalAssets.value * 100).toFixed(2);
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Return on Assets:</div>
+                        <div class="data-value">${returnOnAssets}%</div>
+                    </div>`);
+                }
+                
+                if (financialData.revenue && financialData.totalAssets) {
+                    const assetTurnover = (financialData.revenue.value / financialData.totalAssets.value).toFixed(2);
+                    appendToOutput(`<div class="data-row">
+                        <div class="data-label">Asset Turnover:</div>
+                        <div class="data-value">${assetTurnover}x</div>
+                    </div>`);
+                }
+            }
+            
+            appendToOutput('<div class="section-header">DATA SOURCE</div>');
+            appendToOutput(`<div class="data-row">
+                <div class="data-label">Source:</div>
+                <div class="data-value">SEC EDGAR Database</div>
             </div>`);
-            
-        function analyzeFinancialData(data) {
-            const profitMargin = (data.netIncome / data.revenue) * 100;
-            const debtToEquity = data.longTermDebt / data.shareholderEquity;
-            const returnOnAssets = (data.netIncome / data.totalAssets) * 100;
-            const assetTurnover = data.revenue / data.totalAssets;
-            const cashRatio = data.cashAndEquivalents / data.totalLiabilities;
-            const equityRatio = data.shareholderEquity / data.totalAssets;
-            
-            const strengths = [];
-            const concerns = [];
-            
-            // Profitability Analysis
-            if (profitMargin > 20) {
-                strengths.push(`Exceptional profit margin at ${profitMargin.toFixed(1)}% indicates strong pricing power`);
-            } else if (profitMargin > 10) {
-                strengths.push(`Healthy profit margin of ${profitMargin.toFixed(1)}% demonstrates operational efficiency`);
-            } else if (profitMargin < 5) {
-                concerns.push(`Low profit margin of ${profitMargin.toFixed(1)}% suggests pricing pressure or cost issues`);
-            }
-            
-            // Debt Analysis
-            if (debtToEquity < 0.3) {
-                strengths.push(`Conservative debt-to-equity ratio of ${debtToEquity.toFixed(2)} indicates low financial risk`);
-            } else if (debtToEquity > 1.0) {
-                concerns.push(`High debt-to-equity ratio of ${debtToEquity.toFixed(2)} suggests elevated leverage risk`);
-            }
-            
-            // Asset Efficiency
-            if (returnOnAssets > 15) {
-                strengths.push(`Outstanding ROA of ${returnOnAssets.toFixed(1)}% shows excellent asset utilization`);
-            } else if (returnOnAssets > 8) {
-                strengths.push(`Strong ROA of ${returnOnAssets.toFixed(1)}% indicates effective asset management`);
-            } else if (returnOnAssets < 3) {
-                concerns.push(`Low ROA of ${returnOnAssets.toFixed(1)}% suggests inefficient asset utilization`);
-            }
-            
-            // Liquidity Analysis
-            if (cashRatio > 0.2) {
-                strengths.push(`Strong cash position with ${(cashRatio * 100).toFixed(1)}% of liabilities covered by cash`);
-            } else if (cashRatio < 0.05) {
-                concerns.push(`Limited cash reserves relative to liabilities may impact financial flexibility`);
-            }
-            
-            // Financial Structure
-            if (equityRatio > 0.6) {
-                strengths.push(`Strong balance sheet with ${(equityRatio * 100).toFixed(1)}% equity-to-assets ratio`);
-            } else if (equityRatio < 0.3) {
-                concerns.push(`High leverage with only ${(equityRatio * 100).toFixed(1)}% equity financing`);
-            }
-            
-            // Revenue Scale Analysis
-            if (data.revenue > 200000000000) {
-                strengths.push(`Massive revenue scale of ${formatNumber(data.revenue)} provides market dominance`);
-            } else if (data.revenue < 50000000000) {
-                concerns.push(`Revenue scale of ${formatNumber(data.revenue)} may limit competitive positioning`);
-            }
-            
-            return { strengths, concerns };
+            appendToOutput(`<div class="data-row">
+                <div class="data-label">Entity:</div>
+                <div class="data-value">${factsData.entityName}</div>
+            </div>`);
         }
+        
+        function extractLatestValue(concept) {
+            if (!concept.units || !concept.units.USD) return null;
+            
+            const data = concept.units.USD;
+            // Sort by end date, most recent first
+            const sortedData = data.sort((a, b) => new Date(b.end) - new Date(a.end));
+            
+            // Prefer annual data (10-K forms)
+            const annual = sortedData.find(item => item.form === '10-K' || item.form === '10-K/A');
+            if (annual) {
+                return { value: annual.val, date: annual.end, form: annual.form };
+            }
+            
+            // Fall back to most recent data
+            if (sortedData.length > 0) {
+                return { value: sortedData[0].val, date: sortedData[0].end, form: sortedData[0].form };
+            }
+            
+            return null;
         }
         
         function formatNumber(num) {
@@ -678,6 +759,8 @@
         function clearOutput() {
             const output = document.getElementById('output');
             output.innerHTML = '<div class="blinking-cursor">Terminal cleared...</div>';
+            document.getElementById('api-status').textContent = 'READY';
+            document.getElementById('api-status').style.color = '#ffffff';
         }
     </script>
 </body>
